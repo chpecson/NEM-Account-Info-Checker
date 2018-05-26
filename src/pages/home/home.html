@@ -1,14 +1,320 @@
 <ion-header>
-  <ion-navbar>
+  <ion-navbar color="dark">
     <ion-title>
-      Ionic Blank
+      NEM Account Info Checker
     </ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  The world is your oyster.
-  <p>
-    If you get lost, the <a href="http://ionicframework.com/docs/v2">docs</a> will be your guide.
-  </p>
+  <ion-grid>
+    <!-- Form -->
+    <ion-row>
+      <ion-col col-12 col-lg-4 offset-lg-4>
+        <form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+          <ion-list>
+            <ion-item>
+              <ion-label stacked>Network</ion-label>
+              <ion-select formControlName="network">
+                <ion-option [value]="network.TEST_NET">Test net</ion-option>
+                <ion-option [value]="network.MAIN_NET">Main net</ion-option>
+              </ion-select>
+            </ion-item>
+            <ion-item>
+              <ion-label stacked>Address</ion-label>
+              <ion-input placeholder="Paste or Type your NEM Address Here" formControlName="address"></ion-input>
+            </ion-item>
+          </ion-list>
+          <button full round ion-button color="dark" type="submit" [disabled]="form.invalid">Get Account Info</button>
+        </form>
+      </ion-col>
+    </ion-row>
+
+    <ion-row *ngIf="accountInfo">
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Status
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Remote Status</h2>
+              <p text-wrap>{{ accountInfo.remoteStatus }}</p>
+            </ion-item>
+            <ion-item>
+              <h2>Status</h2>
+              <p text-wrap>{{ accountInfo.status }}</p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <!-- Public Account -->
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Public Account
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Address</h2>
+              <p text-wrap>{{ accountInfo.publicAccount.address.plain() }}</p>
+            </ion-item>
+            <ion-item>
+              <h2>Public Key</h2>
+              <p text-wrap>{{ accountInfo.publicAccount.publicKey || 'None' }}</p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Account
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Balance</h2>
+              <p>{{ (accountInfo.balance.balance / 1000000) | number : '3.6-32' }}</p>
+            </ion-item>
+            <ion-item>
+              <h2>Vested Balance</h2>
+              <p>{{ (accountInfo.balance.vestedBalance / 1000000) | number : '3.6-32' }}</p>
+            </ion-item>
+            <ion-item>
+              <h2>Unvested Balance</h2>
+              <p>{{ (accountInfo.balance.unvestedBalance / 1000000) | number : '3.6-32' }}</p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Harvesting
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Harvested Blocks</h2>
+              <p>{{ accountInfo.harvestedBlocks }}</p>
+            </ion-item>
+            <ion-item>
+              <h2>Importance</h2>
+              <p>{{ accountInfo.importance }}</p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <!-- Cosignatories Of -->
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Cosigners Of
+          </ion-card-header>
+          <ion-card-content>
+            <ion-card *ngFor="let cosigner of accountInfo.cosignatoryOf; let i=index">
+              <ion-card-header (click)="showCosignerDetail(cosigner)">
+                Cosigner {{ i + 1 }}
+                <ion-icon float-right name="arrow-down" *ngIf="!cosigner.visible"></ion-icon>
+                <ion-icon float-right name="arrow-up" *ngIf="!!cosigner.visible"></ion-icon>
+              </ion-card-header>
+              <ion-card-content [hidden]="!cosigner.visible">
+                <ion-item>
+                  <h2>Address</h2>
+                  <p text-wrap>{{ cosigner.publicAccount.address.pretty() }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Public Key</h2>
+                  <p text-wrap>{{ cosigner.publicAccount.publicKey }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Balance</h2>
+                  <p>{{ (cosigner.balance.balance / 1000000) | number : '3.6-32' }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Vested Balance</h2>
+                  <p>{{ (cosigner.balance.vestedBalance / 1000000) | number : '3.6-32' }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Unvested Balance</h2>
+                  <p>{{ (cosigner.balance.unvestedBalance / 1000000) | number : '3.6-32' }}</p>
+                </ion-item>
+              </ion-card-content>
+            </ion-card>
+            <ion-item *ngIf="accountInfo && !accountInfo.cosignatoryOf.length">
+              <h2> Not a cosigner of anyone </h2>
+              <p> You're not added as a cosigner to anyone yet. </p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <!-- Cosigners -->
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Cosigners
+          </ion-card-header>
+          <ion-card-content>
+            <ion-card *ngFor="let cosigner of accountInfo.cosignatories; let i=index">
+              <ion-card-header (click)="showCosignerDetail(cosigner)">
+                Cosigner {{ i + 1 }}
+                <ion-icon float-right name="arrow-down" *ngIf="!cosigner.visible"></ion-icon>
+                <ion-icon float-right name="arrow-up" *ngIf="!!cosigner.visible"></ion-icon>
+              </ion-card-header>
+              <ion-card-content [hidden]="!cosigner.visible">
+                <ion-item>
+                  <h2>Address</h2>
+                  <p text-wrap>{{ cosigner.publicAccount.address.pretty() }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Public Key</h2>
+                  <p text-wrap>{{ cosigner.publicAccount.publicKey }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Balance</h2>
+                  <p>{{ (cosigner.balance.balance / 1000000) | number : '3.6-32' }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Vested Balance</h2>
+                  <p>{{ (cosigner.balance.vestedBalance / 1000000) | number : '3.6-32' }}</p>
+                </ion-item>
+                <ion-item>
+                  <h2>Unvested Balance</h2>
+                  <p>{{ (cosigner.balance.unvestedBalance / 1000000) | number : '3.6-32' }}</p>
+                </ion-item>
+              </ion-card-content>
+            </ion-card>
+            <ion-item *ngIf="accountInfo && !accountInfo.cosignatories.length">
+              <h2> No cosigners </h2>
+              <p> There are no cosigners added yet. </p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+
+    <!-- Skeleton loaders -->
+    <ion-row *ngIf="!accountInfo">
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Status
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Remote Status</h2>
+              <p fake-data></p>
+            </ion-item>
+            <ion-item>
+              <h2>Status</h2>
+              <p fake-data></p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Public Account
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Address</h2>
+              <p fake-data></p>
+            </ion-item>
+            <ion-item>
+              <h2>Public Key</h2>
+              <p fake-data></p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Account
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Balance</h2>
+              <p fake-data></p>
+            </ion-item>
+            <ion-item>
+              <h2>Vested Balance</h2>
+              <p fake-data></p>
+            </ion-item>
+            <ion-item>
+              <h2>Unvested Balance</h2>
+              <p fake-data></p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Harvesting
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <h2>Harvested Blocks</h2>
+              <p fake-data></p>
+            </ion-item>
+            <ion-item>
+              <h2>Importance</h2>
+              <p fake-data></p>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Cosigners Of
+          </ion-card-header>
+          <ion-card-content>
+            <ion-card>
+              <ion-card-header>
+                <h2 fake-label></h2>
+                <ion-icon float-right name="arrow-down"></ion-icon>
+              </ion-card-header>
+            </ion-card>
+            <ion-card no-padding>
+              <ion-card-header>
+                <h2 fake-label></h2>
+                <ion-icon float-right name="arrow-down"></ion-icon>
+              </ion-card-header>
+            </ion-card>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col col-12 col-lg-4>
+        <ion-card>
+          <ion-card-header>
+            Cosigners
+          </ion-card-header>
+          <ion-card-content>
+            <ion-card>
+              <ion-card-header>
+                <h2 fake-label></h2>
+                <ion-icon float-right name="arrow-down"></ion-icon>
+              </ion-card-header>
+            </ion-card>
+            <ion-card no-padding>
+              <ion-card-header>
+                <h2 fake-label></h2>
+                <ion-icon float-right name="arrow-down"></ion-icon>
+              </ion-card-header>
+            </ion-card>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>

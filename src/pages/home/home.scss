@@ -1,3 +1,46 @@
-page-home {
+.ios,
+.md {
+  page-home {
+    ion-card {
+      border: 0;
+      border-radius: 1rem;
+      box-shadow: 0 8px 16px 0 transparentize(color($colors, dark), 0.9);
+    }
 
+    form { width: 100%; }
+
+    ion-col > ion-card ion-content {
+      height: 40vh;
+      overflow-y: auto;
+    }
+
+    [fake-label] {
+      background: linear-gradient(270deg, lighten(color($colors, dark), 30%), color($colors, dark));
+      background-size: 400% 400%;
+      display: inline-block;
+      height: 10px;
+      width: 40%;
+      animation: loading 2s ease-in-out infinite alternate-reverse;
+    }
+    [fake-data] {
+      background: linear-gradient(270deg, lighten(color($colors, dark), 70%), lighten(color($colors, dark), 30%));
+      background-size: 400% 400%;
+      display: block;
+      height: 10px;
+      width: 40%;
+      animation: loading 2s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes loading {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+  }
 }
