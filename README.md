@@ -2,6 +2,17 @@
 
 Check the Info of your account with NEM Address.
 
+## Install and Run
+``` bash
+npm install
+```
+``` bash
+ionic cordova run android
+```
+``` bash
+ionic cordova run ios
+```
+
 ## What info specifically:
 
 1.  Status
